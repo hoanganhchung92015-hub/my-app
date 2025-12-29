@@ -1,28 +1,38 @@
-import { NextResponse } from "next/server"; // Luôn dùng NextResponse cho Next.js 13+
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export async function POST(req: Request) {
+// 1. Khởi tạo với API Key của bạn
+const apiKey = "YOUR_GEMINI_API_KEY";
+const genAI = new GoogleGenerativeAI(apiKey);
+
+async function giaiBaiTap(subject, userPrompt) {
   try {
-    const { prompt, image, subject } = await req.json();
-    
-    // Bảo mật: Lấy Key trực tiếp từ môi trường Server
-    const apiKey = process.env.GEMINI_API_KEY;
-    
-    if (!apiKey) {
-        return NextResponse.json({ error: "Cần cập nhật GEMINI_API_KEY trên Vercel!" }, { status: 401 });
-    }
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
+    // 2. Cấu hình Model
+    const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
-      systemInstruction: `Bạn là chuyên gia ${subject}. Giải bài theo 3 chế độ: 1. Đáp án+CASIO, 2. Gia sư AI ngắn gọn, 3. Luyện Skill (2 câu trắc nghiệm). Trả về văn bản sạch, dùng LaTeX cho công thức.`
+      systemInstruction: `Bạn là chuyên gia ${subject}. 
+      Giải bài theo 3 chế độ: 
+      1. Đáp án + hướng dẫn bấm máy CASIO.
+      2. Gia sư AI giải thích ngắn gọn bản chất.
+      3. Luyện Skill: Đưa ra 2 câu hỏi trắc nghiệm tương tự bài toán.
+      Yêu cầu: Trả về văn bản sạch, sử dụng LaTeX cho tất cả công thức toán học/hóa học.`,
     });
 
-    const result = await model.generateContent(image ? [prompt, { inlineData: { data: image, mimeType: "image/jpeg" } }] : prompt);
-    
-    return NextResponse.json({ text: result.response.text() });
+    // 3. Gửi yêu cầu
+    const result = await model.generateContent(userPrompt);
+    const response = await result.response;
+    const text = response.text();
 
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.log("--- KẾT QUẢ GIẢI BÀI ---");
+    console.log(text);
+    return text;
+
+  } catch (error) {
+    console.error("Lỗi khi gọi Gemini API:", error.message);
   }
 }
 
+// Ví dụ thực thi:
+const monHoc = "Toán học lớp 12";
+const deBai = "Tính đạo hàm của hàm số $y = \ln(x^2 + 1)$";
+
+giaiBaiTap(monHoc, deBai);
