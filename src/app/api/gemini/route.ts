@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server"; // Luôn dùng NextResponse cho Next.js 13+
 
 export async function POST(req: Request) {
@@ -26,3 +25,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
